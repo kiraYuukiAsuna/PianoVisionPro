@@ -47,7 +47,7 @@ struct CalibrationControlsView: View {
     private var instructions: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("琴位校准 · 88 键", systemImage: "viewfinder").font(.title2.bold())
-            Text("先依次取左右两端的位置，再检查两端、C4 与黑键。需要微调时开启校准参照，用下方按钮调整，最后保存琴位。")
+            Text("用指尖取两端，或用按钮手动对齐；检查 C4 与黑键后保存琴位。")
                 .foregroundStyle(.secondary)
             HStack {
                 Toggle("显示校准参照", isOn: $session.calibration.isCalibrating)
@@ -63,9 +63,9 @@ struct CalibrationControlsView: View {
                 Label("把模板放到面前", systemImage: "person.crop.rectangle")
                     .frame(minHeight: 34)
             }.buttonStyle(.borderedProminent).tint(.cyan)
-            Text("校准参照与练习时的黑白琴键底图独立；关闭参照后，位置与尺寸会锁定。")
+            Text("关闭校准参照后，位置与尺寸会锁定。")
                 .font(.caption).foregroundStyle(.secondary)
-            Text("此按钮只提供手动校准的起点：前方约 65 cm、琴高约 72 cm；仍需对齐实体琴键。")
+            Text("放到面前后，仍需用下方按钮对齐实体琴键。")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .disabled(calibration.isSavingAnchor || isFingerCalibrationInProgress)
@@ -75,11 +75,11 @@ struct CalibrationControlsView: View {
     private var fingerCalibrationControls: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("两端指尖取点", systemImage: "hand.point.up.left.fill").font(.headline)
-            Text("1. 先点“采左端”，在 3 秒内把左手食指轻触最左 A0 白键的前缘中心。保持左手，直到左端完成提示。")
+            Text("1. 点击下方按钮，在倒计时结束前将左食指轻触最左 A0 白键的前缘中心，保持至左端取点完成。")
                 .font(.subheadline)
-            Text("2. 再点“采右端”，用右手食指轻触最右 C8 白键的前缘中心。保持右手，直到成功提示。")
+            Text("2. 再次点击按钮，在倒计时结束前将右食指轻触最右 C8 白键的前缘中心，保持至取点完成。")
                 .font(.subheadline)
-            Text("不用按下琴键；每次只需保持当前那只手。首次使用会请求手部追踪权限，仅在点击后读取指定食指位置，完成后停止采样。")
+            Text("不用按下琴键，每次只需保持指定的手。首次使用需允许手部追踪。")
                 .font(.caption).foregroundStyle(.secondary)
             HStack(spacing: 14) {
                 Button {
@@ -109,7 +109,7 @@ struct CalibrationControlsView: View {
                 Text("请先打开空间练习，等待琴位追踪恢复后再开始取点。")
                     .font(.caption).foregroundStyle(.orange)
             }
-            Text("两端成功后会估算位置、宽度与高度。请检查两端及中部 C4 的琴面高度和黑键，必要时用按钮微调，再点“保存并固定琴位”。")
+            Text("取点后检查两端、C4 与黑键，按需微调，再保存琴位。")
                 .font(.caption).foregroundStyle(.secondary)
         }.calibrationPanel()
     }
@@ -135,7 +135,7 @@ struct CalibrationControlsView: View {
                     moveButton("靠近身体", symbol: "arrow.down.left") { calibration.nudgePlacement(towardPlayer: translationStep) }
                 }
             }
-            Text("左右与前后跟随参照方向；升降始终沿竖直方向。长按按钮可连续步进。")
+            Text("长按可连续调整；左右、前后以琴键方向为准。")
                 .font(.caption).foregroundStyle(.secondary)
             Divider()
             Text(calibration.hasSavedAnchor ? "位置数值 · 相对已保存定位点" : "位置数值 · 房间坐标")
@@ -157,10 +157,7 @@ struct CalibrationControlsView: View {
             Divider()
             numericRow(.width)
             numericRow(.depth)
-            Text("宽度会同时改变整排琴键间距。先对齐左右两端，再检查中部与黑键。")
-                .font(.caption).foregroundStyle(.secondary)
-            Divider()
-            Text("预读时长与轨道长度可在“设置”中调整。")
+            Text("键宽改变整排间距；对齐两端后检查中部与黑键。")
                 .font(.caption).foregroundStyle(.secondary)
             if let inputError { Text(inputError).font(.caption).foregroundStyle(.orange) }
         }.calibrationPanel()
@@ -189,7 +186,7 @@ struct CalibrationControlsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             if let error = calibration.errorMessage { Text(error).font(.caption).foregroundStyle(.red) }
-            Text("移动实体钢琴后请重新放置并保存。数值可直接点选输入，按回车或移开焦点后应用。")
+            Text("移动实体钢琴后，请重新校准并保存。")
                 .font(.caption).foregroundStyle(.secondary)
         }.calibrationPanel()
     }
@@ -225,6 +222,7 @@ struct CalibrationControlsView: View {
             .multilineTextAlignment(.trailing)
             .focused($focusedField, equals: field)
             .onSubmit { finishEditing() }
+            .help("可直接输入，按回车或移开焦点后应用")
             .frame(width: 100)
             Text(field.unit).font(.caption).foregroundStyle(.secondary).frame(width: 34, alignment: .leading)
             Button {

@@ -83,10 +83,7 @@ struct DashboardView: View {
     private var header: some View {
         HStack(spacing: 16) {
             Image(systemName: "pianokeys").font(.system(size: 36)).foregroundStyle(accent)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("PianoVision Pro").font(.title.bold())
-                Text("让音符落在真实琴键上").font(.subheadline).foregroundStyle(.secondary)
-            }
+            Text("PianoVision Pro").font(.title.bold())
             Spacer()
             Label(session.bridge.isConnected ? "Mac 已连接" : "等待 Mac", systemImage: session.bridge.isConnected ? "wifi" : "wifi.slash")
                 .font(.subheadline).foregroundStyle(session.bridge.isConnected ? .green : .secondary)
@@ -105,19 +102,24 @@ struct DashboardView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 5) {
                             Text("当前曲目").font(.caption).foregroundStyle(.secondary)
-                            Text(session.song?.title ?? "导入一首 MIDI 开始").font(.title2.bold()).lineLimit(2)
+                            Text(session.song?.title ?? "未选择曲目").font(.title2.bold()).lineLimit(2)
                         }
                         Spacer()
                         Button { page = 4 } label: { Label("打开曲库", systemImage: "music.note.list") }
                     }
                     PianoRollPreview(session: session).frame(height: 230).clipShape(RoundedRectangle(cornerRadius: 16))
                     if session.preparationCountdown > 0 {
-                        Label("准备 \(session.preparationCountdown) 秒 · 音符正在就位，倒计时结束后开始判定", systemImage: "timer")
+                        Label("\(session.preparationCountdown) 秒后开始判定", systemImage: "timer")
                             .font(.subheadline.bold()).foregroundStyle(.cyan)
                     }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("蓝 / 橙：左 / 右手 · 亮边：正在按住 · 绿勾：已累计")
-                        Text("青短线：提前就位，需保持 · 双起音线：松开重弹")
+                    DisclosureGroup("音符标记说明") {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("蓝色：左手 · 橙色：右手 · 灰色：未分配")
+                            Text("空间音符绿边：正在按住 · 绿勾：已累计")
+                            Text("青色短线：后续组的提前输入，需保持按住")
+                            Text("双白线：需要松开后重新按下")
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 6)
                     }.font(.caption).foregroundStyle(.secondary)
                     HStack {
                         Text(PianoSession.timeLabel(session.uiTime))
@@ -158,7 +160,7 @@ struct DashboardView: View {
                     }
                     practiceModeControls
                     if !session.isImmersiveActive {
-                        Label("打开空间练习并校准琴位，即可把引导叠加在实体琴键上。", systemImage: "info.circle")
+                        Label("开始练习会自动打开空间视图；首次使用请先校准琴位。", systemImage: "info.circle")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }.panel()
@@ -199,7 +201,7 @@ struct DashboardView: View {
                     Stepper(PianoSession.noteName(session.splitPitch), value: $session.splitPitch, in: 21...108)
                         .frame(width: 160)
                 }
-                Text("分界音及以上建议右手，更低的音建议左手；可按轨道手动指定。跨手段落需自行判断。")
+                Text("分界音及以上分给右手，其余分给左手；可按轨道手动调整。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             HStack(spacing: 18) {
@@ -225,10 +227,10 @@ struct DashboardView: View {
                 Text("弹对再继续").tag(PracticeMode.waitForNotes)
             }.pickerStyle(.segmented)
             if session.practiceMode == .waitForNotes {
-                Text("当前和弦逐音累积，允许像琶音一样松手移位弹完。提前范围由“设置”中的目标音对齐容差决定；后续重复音仍需重新按下。")
+                Text("弹完本组音符后继续，可松手移位逐音弹。提前容差在“设置”中调整。")
                     .font(.caption).foregroundStyle(.secondary)
             } else {
-                Text("开始、继续或播放中跳转后，音符先滚动 3 秒再开始判定；准备时间不受播放速度影响。")
+                Text("开始、继续或播放中跳转后，均有 3 秒准备时间。")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -239,7 +241,7 @@ struct DashboardView: View {
             Toggle("显示指法建议", isOn: $session.showFingering).font(.headline)
             if session.showFingering {
                 HStack {
-                    Text("1 为拇指，5 为小指；数字表示建议指法，不检测实际手指。")
+                    Text("1 为拇指，5 为小指。建议可手动修正。")
                         .font(.caption).foregroundStyle(.secondary)
                     Spacer()
                     Button {
@@ -271,10 +273,8 @@ struct DashboardView: View {
                         }
                     }
                 }
-                Text("自动拆手和指法适用于初步练习；复杂和弦、跨手与特殊奏法请按需要修正。")
-                    .font(.caption).foregroundStyle(.secondary)
                 if session.unsupportedFingeringCount > 0 {
-                    Text("\(session.unsupportedFingeringCount) 个音符无法可靠生成指法，已留空；可在上方手动填写。")
+                    Text("\(session.unsupportedFingeringCount) 个音符未生成指法，可手动填写。")
                         .font(.caption).foregroundStyle(.orange)
                 }
             }
@@ -294,11 +294,16 @@ struct DashboardView: View {
                 percentageMetric("完成度", value: session.completionPercentage, color: .green)
                 percentageMetric("时机分", value: session.timingPercentage, color: .cyan)
             }
-            Text("完成度 = 正确 ÷（正确＋错音＋漏音），随已判定结果更新。")
-                .font(.caption2).foregroundStyle(.secondary)
+            DisclosureGroup("评分说明") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("完成度 = 正确 ÷（正确＋错音＋漏音），按已判定音符计算。")
+                    Text("时机分只评弹对的音符，按下与松开各占一半。")
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 6)
+            }.font(.caption).foregroundStyle(.secondary)
             Text(session.timingEvaluatedNoteCount > 0
-                 ? "时机分仅评已弹对音，按下与松开各占一半；已评 \(session.timingEvaluatedNoteCount) 音。"
-                 : "松键后更新时机分，尚无完整评分样本。")
+                 ? "时机已评 \(session.timingEvaluatedNoteCount) 音"
+                 : "暂无时机评分")
                 .font(.caption2).foregroundStyle(.secondary)
             Divider()
             if session.practiceMode == .waitForNotes {
@@ -308,7 +313,7 @@ struct DashboardView: View {
                     Text(session.waitingPitches.sorted().map(PianoSession.noteName).joined(separator: " · "))
                         .font(.caption.monospaced())
                 } else {
-                    Label(session.isPlaying ? "跟随曲目，弹对继续" : "开始后弹完目标音继续", systemImage: "pianokeys")
+                    Label(session.isPlaying ? "弹完本组后继续" : "等待开始练习", systemImage: "pianokeys")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Divider()
@@ -324,7 +329,7 @@ struct DashboardView: View {
                 Spacer()
                 Text(session.lastTimingMilliseconds.map { String(format: "%+.0f ms", $0) } ?? "—").monospacedDigit()
             }.font(.subheadline)
-            Text(session.practiceMode == .automatic ? "负值表示提前，正值表示延后。暂停时仍可检查琴键输入。" : "等待期间不计漏音；已按下的琴键会立即显示。")
+            Text(session.practiceMode == .automatic ? "负值：提前 · 正值：延后" : "等待期间不计漏音")
                 .font(.caption).foregroundStyle(.secondary)
             Label(session.pedalDown ? "延音踏板按下" : "延音踏板松开", systemImage: "pianokeys")
                 .font(.caption).foregroundStyle(session.pedalDown ? .cyan : .secondary)
@@ -335,7 +340,7 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack { Text("实时输入").font(.headline); Spacer(); Text("\(session.activeNotes.count) 键").font(.caption).foregroundStyle(.secondary) }
             if session.recentInputs.isEmpty {
-                Text("在电钢琴上弹奏，或在 Mac 中转程序中点击测试音。").font(.subheadline).foregroundStyle(.secondary)
+                Text("弹奏琴键，或在 Mac 的 PianoBridge 中发送测试音符。").font(.subheadline).foregroundStyle(.secondary)
             }
             ForEach(session.recentInputs.prefix(7)) { input in
                 HStack {
@@ -368,7 +373,7 @@ struct DashboardView: View {
     private var connectionPanel: some View {
         VStack(alignment: .leading, spacing: 18) {
             Label("连接 Mac 中转", systemImage: "desktopcomputer").font(.title3.bold())
-            Text("RD-2000 EX 的 USB COMPUTER 接口连接 Mac，并在 PianoBridge 中选择 MIDI 输入源。两台设备需位于同一局域网。").font(.subheadline).foregroundStyle(.secondary)
+            Text("Mac 与头显需在同一局域网。打开 PianoBridge 后，选择下方的 Mac 连接。").font(.subheadline).foregroundStyle(.secondary)
             Text(session.bridge.status).font(.subheadline)
             if let milliseconds = session.bridge.latencyMilliseconds {
                 Text(String(format: "网络往返 %.1f ms", milliseconds)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
@@ -378,7 +383,10 @@ struct DashboardView: View {
                     HStack { Image(systemName: "desktopcomputer"); Text(service.name); Spacer(); Image(systemName: "arrow.right") }
                 }
             }
-            if session.bridge.services.isEmpty { Text("正在寻找 PianoBridge…").foregroundStyle(.secondary) }
+            if session.bridge.services.isEmpty && !session.bridge.isConnected {
+                Text("正在寻找 PianoBridge…请确认 Mac 已启动中转并允许本地网络访问。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Divider()
             TextField("Mac IP 地址（自动发现失败时）", text: $manualHost).textInputAutocapitalization(.never).autocorrectionDisabled()
             TextField("Mac 界面显示的端口", text: $manualPort).keyboardType(.numberPad)
@@ -403,7 +411,7 @@ struct DashboardView: View {
                 Text(String(format: "%+.0f ms", session.inputOffsetMilliseconds)).monospacedDigit()
             }.font(.caption)
             Slider(value: $session.inputOffsetMilliseconds, in: -150...150, step: 5)
-            Text("时间修正仅影响自动滚动的节奏计分。")
+            Text("仅修正自动滚动模式的输入时间。")
                 .font(.caption).foregroundStyle(.secondary)
         }.panel().frame(maxWidth: .infinity)
     }

@@ -32,7 +32,7 @@ struct SongLibraryView: View {
     private var libraryHeader: some View {
         HStack(alignment: .center, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
-                Label("我的曲库", systemImage: "music.note.house")
+                Label("曲库", systemImage: "music.note.house")
                     .font(.title2.bold())
                 Text("\(session.library.count) 首曲目 · \(favoriteCount) 首收藏")
                     .font(.subheadline).foregroundStyle(.secondary)
@@ -118,7 +118,7 @@ struct SongLibraryView: View {
                 .toggleStyle(.button)
                 .tint(.yellow)
                 .accessibilityLabel("只看收藏曲目")
-                Text("收藏始终置顶，其余按所选方式排序")
+                Text("收藏置顶")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
                 Text("显示 \(entries.count) 首")
@@ -153,7 +153,7 @@ struct SongLibraryView: View {
         if session.library.isEmpty {
             emptyState(
                 title: "曲库还没有曲目",
-                message: "导入 MIDI 后会保存在头显中，下次打开仍可使用。也可以先试试内置练习曲。",
+                message: "导入 MIDI，或打开内置练习曲。",
                 symbol: "music.note.list"
             ) {
                 Button("导入 MIDI", action: onImport)
@@ -162,7 +162,7 @@ struct SongLibraryView: View {
         } else if favoritesOnly && favoriteCount == 0 {
             emptyState(
                 title: "还没有收藏曲目",
-                message: "点曲目旁的星标即可收藏，收藏的曲目在所有排序中都会排在前面。",
+                message: "点曲目旁的星标添加收藏。",
                 symbol: "star"
             ) {
                 Button("查看全部曲目") { resetFilters() }
@@ -202,15 +202,13 @@ struct SongLibraryView: View {
     private var macImportPanel: some View {
         DisclosureGroup {
             VStack(alignment: .leading, spacing: 12) {
-                Text("在 Mac 的 PianoBridge 中选择 MIDI 文件或文件夹，发送到头显即可批量加入曲库。文件夹中的子文件夹也会一并导入。")
+                Text("在 Mac 的 PianoBridge 中选择 MIDI 文件或文件夹，再发送到头显。子文件夹会一并导入。")
                     .font(.subheadline).foregroundStyle(.secondary)
                 if !session.bridge.isConnected {
-                    Text("两台设备需在同一局域网，可在“连接”页建立连接。")
+                    Text("两台设备需在同一局域网，请先在“连接”页连接 Mac。")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Text(session.bridge.fileTransferStatus)
-                    .font(.caption).foregroundStyle(.secondary)
-                Text("支持 MIDI Format 0 / 1 和曲中变速；曲目保存在本机，无需上传。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             .padding(.top, 12)

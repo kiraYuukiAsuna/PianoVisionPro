@@ -7,7 +7,7 @@ struct PianoBridgeApp: App {
     @State private var model = BridgeModel()
 
     var body: some Scene {
-        Window("Piano Bridge", id: "bridge") {
+        Window("PianoBridge", id: "bridge") {
             BridgeWindow(model: model)
                 .task { model.start() }
                 .onDisappear { model.stop() }
@@ -126,14 +126,16 @@ private struct BridgeWindow: View {
             HStack(spacing: 12) {
                 Image(systemName: "pianokeys").font(.largeTitle).foregroundStyle(.tint)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Piano Bridge").font(.title.bold())
+                    Text("PianoBridge").font(.title.bold())
                     Text("USB MIDI → Mac → Apple Vision Pro").foregroundStyle(.secondary)
                 }
             }
             GroupBox("1. 连接电钢琴") {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("将 RD-2000 / RD-2000 EX 的 USB COMPUTER 端口连接到 Mac。")
-                        .font(.callout).foregroundStyle(.secondary)
+                    if model.midi.connectedSourceID == nil {
+                        Text("将 RD-2000 / RD-2000 EX 的 USB COMPUTER 端口连接到 Mac。")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
                     HStack {
                         Picker("MIDI 输入", selection: Binding(get: { model.midi.selectedSourceID },
                                                                set: { model.midi.selectedSourceID = $0 })) {
@@ -148,7 +150,7 @@ private struct BridgeWindow: View {
                     }
                     Text(model.midi.status).font(.callout).textSelection(.enabled)
                     if model.midi.sources.isEmpty {
-                        Text("尚未发现 MIDI 输入。检查 USB 线和琴的 USB 驱动模式，或先使用下面的测试音符。")
+                        Text("未发现 MIDI 输入。请检查 USB 线和琴的 USB 驱动模式，或发送测试音符检查头显连接。")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }.padding(8)
@@ -163,8 +165,10 @@ private struct BridgeWindow: View {
                             Button("停止中转") { model.files.cancel(); model.clearNotes(); model.server.stop() }
                         } else { Button("启动中转") { model.server.start() } }
                     }
-                    Text("Mac 与 Vision Pro 接入同一局域网，并在 Vision Pro 中选择这台 Mac。首次运行请允许本地网络访问。")
-                        .font(.callout).foregroundStyle(.secondary)
+                    if model.server.clientCount == 0 {
+                        Text("Mac 与头显需在同一局域网。在头显的“连接”页选择这台 Mac，并允许本地网络访问。")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
                     HStack {
                         Text("Mac 地址：\(ProcessInfo.processInfo.hostName)")
                         Spacer()
@@ -187,9 +191,9 @@ private struct BridgeWindow: View {
                         Button("测试 C 大三和弦") { model.testChord() }
                         Button("测试 C 大调音阶") { model.testScale() }
                         Spacer()
-                        Button("清空琴键") { model.clearNotes() }
+                        Button("清空按键状态") { model.clearNotes() }
                     }
-                    Text("测试只发送 MIDI 事件；声音由实体电钢琴发出。")
+                    Text("测试不发声，仅检查连接和琴键高亮。")
                         .font(.caption).foregroundStyle(.secondary)
                 }.padding(8)
             }
@@ -268,7 +272,7 @@ private struct BridgeWindow: View {
                         }
                     }.disabled(model.files.isSending)
                 } else {
-                    Text("尚未连接头显；可以先选择文件或文件夹，连接后手动导入。")
+                    Text("请先在头显的“连接”页连接这台 Mac，再发送曲目。")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 HStack {
@@ -283,7 +287,7 @@ private struct BridgeWindow: View {
                     }
                 }
                 if model.files.isSending { Text(model.server.fileTransferStatus).font(.callout).textSelection(.enabled) }
-                Text("文件夹逐首导入曲库，保留当前练习。失败或取消后可继续；重连或更换头显后会重新确认整批，同一头显不重复入库。")
+                Text("批量导入不切换当前曲目；失败或取消后可重试。")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(8)
         }

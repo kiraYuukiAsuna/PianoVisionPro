@@ -23,7 +23,7 @@
 	<key>NSHandsTrackingUsageDescription</key>
 	<string>仅在你启动琴位取点时，读取食指位置来对齐真实琴键；演奏时不会通过手势移动琴位。</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>连接 Mac 上的 PianoBridge，接收电钢琴的 MIDI 演奏事件。所有演奏数据仅在局域网传输。</string>
+	<string>连接 Mac 上的 PianoBridge，接收 MIDI 演奏和曲目文件。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationPreferredDefaultSceneSessionRole</key>

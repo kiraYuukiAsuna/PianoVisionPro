@@ -14,8 +14,6 @@ struct DisplaySettingsView: View {
             }
             practiceSettings
             Divider()
-            Text("按住时整键持续高亮，松开后恢复目标提示。黑键音符使用同手的深色，白键音符更亮。")
-                .font(.caption).foregroundStyle(.secondary)
             previewSettings
             Divider()
             guideSettings
@@ -35,42 +33,40 @@ struct DisplaySettingsView: View {
             adjustment("目标音对齐容差", value: $session.targetAlignmentMilliseconds,
                        range: 50...2000, step: 50, scale: 1, unit: "ms")
             Text(session.practiceMode == .waitForNotes
-                 ? "弹对再继续 · 50 ms–2 s：允许比谱面起音提前多久按下。到达目标后会一直等待，晚弹不超时。"
-                 : "自动滚动 · 50 ms–2 s：允许比谱面起音提前或滞后多少时间，超过容差才判为错音或漏音。")
+                 ? "弹对再继续：容差决定可提前多久按下；到达目标后持续等待，晚弹不超时。"
+                 : "自动滚动：容差决定可提前或延后多久按下，超出后判为错音或漏音。")
                 .font(.caption).foregroundStyle(.secondary)
-            Text("时机分仅作练习参考：已弹对音的按下、松开各占 50%，偏差 80 ms 内满分，达到 500 ms 归零；持续未松开会扣分。暂停、变速或输入中断时，未完成的时值测量不计入。")
-                .font(.caption).foregroundStyle(.secondary)
+            DisclosureGroup("时机评分规则") {
+                Text("只评已弹对音，按下与松开各占 50%。偏差 80 ms 内满分，达到 500 ms 为零分；长时间未松开会扣分。暂停、变速或输入中断时，未完成的测量不计入。")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .padding(.top, 8)
+            }
         }
     }
 
     private var previewSettings: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("预读与远端淡入").font(.subheadline.bold())
+            Text("音符轨道").font(.subheadline.bold())
             adjustment("预读时长（实际时间）", value: $session.displaySettings.lookAheadSeconds,
                        range: 2...10, step: 0.5, scale: 1, unit: "秒")
             adjustment("音符轨道长度", value: $session.displaySettings.rollLengthMeters,
                        range: 0.35...2, step: 0.05, scale: 100, unit: "cm")
-            Text("调整播放速度后，仍提前相同的实际秒数看到音符；轨道长度不变。延长预读会让音符更密。")
+            Text("预读按实际秒数计算，不随播放速度改变；预读越长，音符越密。")
                 .font(.caption).foregroundStyle(.secondary)
             Toggle("远端音符渐入", isOn: $session.displaySettings.fadesDistantNotes)
             opacity("远端淡入强度", value: $session.displaySettings.farFadeStrength)
                 .disabled(!session.displaySettings.fadesDistantNotes)
-            Text("音符从轨道远端逐渐显现，靠近琴键时保持清晰。关闭后直接显示。")
-                .font(.caption).foregroundStyle(.secondary)
         }
     }
 
     private var guideSettings: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("认谱辅助").font(.subheadline.bold())
-            guideToggle("黑键分组与 C 音八度定位", detail: "用稀疏参照帮助识别黑键两枚、三枚分组及八度位置。",
-                        value: $session.displaySettings.showsLaneLandmarks)
-            guideToggle("拍线与小节线", detail: "按曲目的节拍显示横向参照，帮助看清同时起音与节奏间隔。",
-                        value: $session.displaySettings.showsBeatGrid)
-            guideToggle("起音线到琴键的连接提示", detail: "连接音符轨道与对应琴键，帮助在条带和实体琴之间定位。",
-                        value: $session.displaySettings.showsKeyConnectors)
+            Toggle("黑键分组与 C 音位置", isOn: $session.displaySettings.showsLaneLandmarks)
+            Toggle("拍线与小节线", isOn: $session.displaySettings.showsBeatGrid)
+            Toggle("起音线与琴键的连接线", isOn: $session.displaySettings.showsKeyConnectors)
             Toggle("显示每个音符的起音标记", isOn: $session.displaySettings.showsOnsetMarkers)
-            Text("需要松开重弹时仍显示双线提醒。")
+            Text("关闭起音标记后，仍显示松开重弹的双线提醒。")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }
@@ -97,15 +93,8 @@ struct DisplaySettingsView: View {
                        range: 0...0.4, step: 0.005, scale: 100, unit: "cm")
             adjustment("轨道离琴面的高度", value: $session.displaySettings.surfaceHeightMeters,
                        range: 0...0.2, step: 0.002, scale: 100, unit: "cm")
-            Text("间隙只改变显示，不改变原曲时值或演奏判定；起音标记表示需要重新弹下。")
+            Text("间隙仅影响显示，不改变时值或判定。")
                 .font(.caption).foregroundStyle(.secondary)
-        }
-    }
-
-    private func guideToggle(_ title: String, detail: String, value: Binding<Bool>) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Toggle(title, isOn: value)
-            Text(detail).font(.caption).foregroundStyle(.secondary)
         }
     }
 

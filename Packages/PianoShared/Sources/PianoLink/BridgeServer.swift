@@ -52,7 +52,7 @@ public final class BridgeServer {
             let listener = try NWListener(using: parameters, on: .any)
             self.listener = listener
             let generation = UUID(); self.generation = generation
-            listener.service = NWListener.Service(name: "\(ProcessInfo.processInfo.hostName) · Piano Bridge", type: "_pianovision._tcp")
+            listener.service = NWListener.Service(name: "\(ProcessInfo.processInfo.hostName) · PianoBridge", type: "_pianovision._tcp")
             listener.stateUpdateHandler = { [weak self] state in
                 DispatchQueue.main.async {
                     guard let self, self.generation == generation else { return }

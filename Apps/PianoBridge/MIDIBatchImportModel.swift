@@ -33,7 +33,7 @@ struct MIDIBatchItem: Identifiable, Sendable {
 @MainActor @Observable
 final class MIDIBatchImportModel {
     private(set) var items: [MIDIBatchItem] = []
-    private(set) var status = "选择 MIDI 文件或文件夹，连接头显后手动发送。"
+    private(set) var status = "尚未选择曲目"
     private(set) var isScanning = false
     private(set) var isSending = false
 
@@ -182,7 +182,7 @@ final class MIDIBatchImportModel {
                 if result.items.isEmpty {
                     self.status = result.warning ?? "文件夹中没有找到 .mid 或 .midi 文件。"
                 } else {
-                    self.status = "已选择 \(result.items.count) 首；连接头显后手动发送。"
+                    self.status = "已选择 \(result.items.count) 首，待发送。"
                     if let warning = result.warning { self.status += " \(warning)" }
                 }
             } catch {
